@@ -41,7 +41,7 @@ class Workday(object):
     def __compute_lunch_duration(self):
         self.__lunch_duration = None
         for lock_period in self.lock_periods:
-            if time(10,30) < lock_period.begin.time() < lock_period.end.time() < time(13,30):                
+            if time(10,30) < lock_period.begin.time() < lock_period.end.time() < time(13,30):
                 if self.__lunch_duration is None or self.__lunch_duration < lock_period.duration:
                     self.__lunch_duration = lock_period.duration
                 
@@ -77,10 +77,10 @@ for file_name in sorted(os.listdir(log_file_path)):
     if file_name.startswith("EventList-") and file_name.endswith(".csv"):
         print("processing", file_name)
         with open(os.path.join(log_file_path, file_name)) as csv_fd:
-            reader = csv.reader(csv_fd)
-            next(reader, None) # skip the header
+            reader = csv.DictReader(csv_fd)
+            #next(reader, None) # skip the header
             for row in reader:
-                time_generated = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")        
+                time_generated = datetime.strptime(row['TimeGenerated'], "%Y-%m-%d %H:%M:%S")
                 if current_workday.begin is None or current_workday.begin.date() != time_generated.date():
                     if current_workday.begin is not None:
                         workdays.append(current_workday)
@@ -88,7 +88,7 @@ for file_name in sorted(os.listdir(log_file_path)):
                 current_workday.end = time_generated
 
                 # 4800 = lock, 4801 = unlock
-                event_id = row[2]
+                event_id = row['EventID']
                 if event_id == "4800":
                     current_workday.lock_periods.append(LockPeriod(time_generated))
                 elif event_id == "4801":
