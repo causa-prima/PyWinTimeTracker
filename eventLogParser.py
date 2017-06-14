@@ -18,9 +18,9 @@ last_run = datetime(2017, 4, 1, 0, 0, 0)
 for file_name in sorted(os.listdir(log_file_path), reverse=True):
     if file_name.startswith("EventList-") and file_name.endswith(".csv"):
         with open(os.path.join(log_file_path, file_name)) as csv_file:
-            csv_deque = deque(csv.reader(csv_file), 1)
+            csv_deque = deque(csv.DictReader(csv_file), 1)
             if csv_deque:
-                last_run = datetime.strptime(csv_deque[0][0], "%Y-%m-%d %H:%M:%S")                
+                last_run = datetime.strptime(csv_deque[0]["TimeGenerated"], "%Y-%m-%d %H:%M:%S")
                 break
 
 print('last run:', last_run)
@@ -81,21 +81,10 @@ while event_index < len(events_of_interest):
         new_file = True
     
     with open(complete_path, "a+", newline="\n", encoding="utf-8") as fd:
-        writer = csv.writer(fd)
+        fieldnames = ["TimeGenerated","EventID","EventCategory","RecordNumber", "StringInserts"]
+        writer = csv.DictWriter(fd, fieldnames=fieldnames)
         if new_file:
-            writer.writerow(["TimeGenerated",
-                            "TimeWritten",
-                            "EventID",
-                            "StringInserts",
-                            "ComputerName",
-                            "EventType",
-                            "EventCategory",
-                            "Reserved",
-                            "RecordNumber",
-                            "ReservedFlags",
-                            "ClosingRecordNumber",
-                            "SourceName",
-                            "Sid"])
+            writer.writeheader()
         
         for event_index in range(event_index, len(events_of_interest)):
             event = events_of_interest[event_index]
@@ -104,19 +93,11 @@ while event_index < len(events_of_interest):
             # otherwise change the file
             if event.TimeGenerated.month == last_written.month:
                 last_written = event.TimeGenerated
-                writer.writerow([event.TimeGenerated,
-                                event.TimeWritten,
-                                event.EventID,
-                                event.StringInserts,
-                                event.ComputerName,
-                                event.EventType,
-                                event.EventCategory,
-                                event.Reserved,
-                                event.RecordNumber,
-                                event.ReservedFlags,
-                                event.ClosingRecordNumber,
-                                event.SourceName,
-                                event.Sid])
+                writer.writerow({'TimeGenerated':event.TimeGenerated,
+                                 'EventID': event.EventID,
+                                 'EventCategory': event.EventCategory,
+                                 'RecordNumber': event.RecordNumber,
+                                 'StringInserts': event.StringInserts})
             else:                
                 break
 
