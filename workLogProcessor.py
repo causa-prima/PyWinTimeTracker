@@ -28,7 +28,7 @@ class Workday(object):
         self.__lunch_duration = None
 
     def __repr__(self):
-        out_string = "<{} {} {}-{} LL: {} WH: {} CWH: {} OT: {:>8}>"
+        out_string = "<{} {} {}-{} LL: {} WH: {!s:>8} CWH: {!s:>8} OT: {:>8}>"
         return out_string.format(self.__class__.__name__,
                                  self.begin.date(),
                                  self.begin.time(),
