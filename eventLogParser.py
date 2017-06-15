@@ -81,7 +81,7 @@ while event_index < len(events_of_interest):
         new_file = True
     
     with open(complete_path, "a+", newline="\n", encoding="utf-8") as fd:
-        fieldnames = ["TimeGenerated","EventID","EventCategory","RecordNumber", "StringInserts"]
+        fieldnames = ["Ignore","TimeGenerated","EventID","EventCategory","RecordNumber", "StringInserts"]
         writer = csv.DictWriter(fd, fieldnames=fieldnames)
         if new_file:
             writer.writeheader()
@@ -93,7 +93,8 @@ while event_index < len(events_of_interest):
             # otherwise change the file
             if event.TimeGenerated.month == last_written.month:
                 last_written = event.TimeGenerated
-                writer.writerow({'TimeGenerated':event.TimeGenerated,
+                writer.writerow({'Ignore': 'N',
+                                 'TimeGenerated': event.TimeGenerated,
                                  'EventID': event.EventID,
                                  'EventCategory': event.EventCategory,
                                  'RecordNumber': event.RecordNumber,

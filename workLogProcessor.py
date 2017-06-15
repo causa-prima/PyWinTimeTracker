@@ -80,6 +80,8 @@ for file_name in sorted(os.listdir(log_file_path)):
             reader = csv.DictReader(csv_fd)
             #next(reader, None) # skip the header
             for row in reader:
+                if row['Ignore'] == 'Y':
+                    continue
                 time_generated = datetime.strptime(row['TimeGenerated'], "%Y-%m-%d %H:%M:%S")
                 if current_workday.begin is None or current_workday.begin.date() != time_generated.date():
                     if current_workday.begin is not None:
@@ -103,9 +105,6 @@ for file_name in sorted(os.listdir(log_file_path)):
                 # If the last processed workday is today, it's end is not yet reached, but will be some time in
                 # the future. Hence, set it to the current time.
                 current_workday.end = datetime.now()
-            """if current_workday.end != current_workday.begin and workdays[-1] is not current_workday:
-                print('appending')
-                workdays.append(current_workday)"""
         
 print()
 overtime = timedelta()
