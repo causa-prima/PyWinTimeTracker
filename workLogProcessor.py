@@ -114,4 +114,4 @@ for workday in workdays:
     overtime += workday.overtime
 
 print()
-print("aggregated overtime: {}".format(overtime))
+print("aggregated overtime: {} ({:.2f} hours)".format(overtime, overtime.total_seconds()/3600))
