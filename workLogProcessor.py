@@ -11,7 +11,7 @@ class LockPeriod(object):
         self.end = None
 
     def __repr__(self):
-        return "<{} {}-{}>".format(self.__class__.__name__, self.begin, self.end)
+        return "<{} {} {}-{}>".format(self.__class__.__name__, self.begin.date(), self.begin.time(), self.end.time())
 
     @property
     def duration(self):
@@ -25,7 +25,7 @@ class Workday(object):
         self.begin = begin
         self.end = None
         self.lock_periods = []
-        self.__lunch_duration = None
+        self.__lunch_period = None
 
     def __repr__(self):
         out_string = "<{} {} {}-{} LL: {} WH: {!s:>8} CWH: {!s:>8} OT: {:>8}>"
@@ -33,20 +33,23 @@ class Workday(object):
                                  self.begin.date(),
                                  self.begin.time(),
                                  self.end.time(),
-                                 self.lunch_duration,
+                                 self.lunch_period,
                                  self.working_hours,
                                  self.corrected_working_hours,
                                  str(self.overtime) if self.overtime > timedelta(0) else "-{}".format(-self.overtime))
 
-    def __compute_lunch_duration(self):
-        self.__lunch_duration = None
+    def __compute_lunch_period(self):
+        self.__lunch_period = None
         for lock_period in self.lock_periods:
             if time(10,30) < lock_period.begin.time() < lock_period.end.time() < time(13,30):
-                if self.__lunch_duration is None or self.__lunch_duration < lock_period.duration:
-                    self.__lunch_duration = lock_period.duration
+                if self.__lunch_period is None or self.__lunch_period.duration < lock_period.duration:
+                    self.__lunch_period = lock_period
                 
-        if self.__lunch_duration is None:
-            self.__lunch_duration = timedelta(minutes=30)
+        if self.__lunch_period is None:
+            lunch_period_helper = datetime(self.begin.year, self.begin.month, self.begin.day, hour=12)
+            lunch_period = LockPeriod(begin=lunch_period_helper)
+            lunch_period.end = lunch_period_helper + timedelta(minutes=30)
+            self.__lunch_period = lunch_period
 
     @property
     def working_hours(self):
@@ -57,13 +60,13 @@ class Workday(object):
 
     @property
     def corrected_working_hours(self):
-        return self.working_hours - self.lunch_duration
+        return self.working_hours - self.lunch_period.duration
 
     @property
-    def lunch_duration(self):
-        if self.__lunch_duration is None:
-            self.__compute_lunch_duration()
-        return self.__lunch_duration
+    def lunch_period(self):
+        if self.__lunch_period is None:
+            self.__compute_lunch_period()
+        return self.__lunch_period
 
     @property
     def overtime(self):
