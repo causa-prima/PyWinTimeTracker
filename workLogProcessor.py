@@ -36,12 +36,14 @@ class Workday(object):
         self.__lunch_period = None
 
     def __repr__(self):
-        out_string = "<{} {} {}-{} LL: {} WH: {!s:>8} CWH: {!s:>8} OT: {:>8}>"
+        out_string = "<{} {} {}-{} LL: {} ({}-{}) WH: {!s:>8} CWH: {!s:>8} OT: {:>8}>"
         return out_string.format(self.__class__.__name__,
                                  self.begin.date(),
                                  self.begin.time(),
                                  self.end.time(),
-                                 self.lunch_period,
+                                 self.lunch_period.duration,
+                                 self.lunch_period.begin.time(),
+                                 self.lunch_period.end.time(),
                                  self.working_hours,
                                  self.corrected_working_hours,
                                  str(self.overtime) if self.overtime > timedelta(0) else "-{}".format(-self.overtime))
