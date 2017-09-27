@@ -36,17 +36,11 @@ class Workday(object):
         self.__lunch_period = None
 
     def __repr__(self):
-        out_string = "<{} {} {}-{} LL: {} ({}-{}) WH: {!s:>8} CWH: {!s:>8} OT: {:>8}>"
+        out_string = "<{} {} {}-{}>"
         return out_string.format(self.__class__.__name__,
                                  self.begin.date(),
                                  self.begin.time(),
-                                 self.end.time(),
-                                 self.lunch_period.duration,
-                                 self.lunch_period.begin.time(),
-                                 self.lunch_period.end.time(),
-                                 self.working_hours,
-                                 self.corrected_working_hours,
-                                 str(self.overtime) if self.overtime > timedelta(0) else "-{}".format(-self.overtime))
+                                 self.end.time())
 
     def __compute_lunch_period(self):
         self.__lunch_period = None
@@ -123,7 +117,8 @@ for file_name in sorted(os.listdir(log_file_path)):
 print()
 overtime = timedelta()
 for workday in workdays:
-    print(workday)
+    out_string = "{} LL: {} ({}-{}) WH: {!s:>8} CWH: {!s:>8} OT: {:>8}"
+    print(out_string.format(workday, workday.lunch_period.duration, workday.lunch_period.begin.time(), workday.lunch_period.end.time(), workday.working_hours, workday.corrected_working_hours, str(workday.overtime) if workday.overtime > timedelta(0) else "-{}".format(-workday.overtime)))
     overtime += workday.overtime
 
 print()

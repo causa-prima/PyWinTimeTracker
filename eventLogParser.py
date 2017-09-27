@@ -38,16 +38,16 @@ while continue_while:
     events = win32evtlog.ReadEventLog(event_log, win32evtlog.EVENTLOG_BACKWARDS_READ|win32evtlog.EVENTLOG_SEQUENTIAL_READ, 0)
     if not events:
         break
-    
-    for event in events:        
+
+    for event in events:
         event_timetuple = event.TimeGenerated.timetuple()
         event_timestamp = mktime(event_timetuple)
         event_datetime = datetime.fromtimestamp(event_timestamp)
-        
+
         if event_datetime <= last_run:
             continue_while = False
             break
-        
+
         if last_event and dayMonthYearSum(event.TimeGenerated) != dayMonthYearSum(last_event.TimeGenerated):
             # the day changed, append the current and perhaps the old event
             if not last_event_was_appended:
@@ -65,7 +65,7 @@ while continue_while:
 # the day of the last run (hence the last run must have been the last event of that day)
 if last_event and not last_event_was_appended and dayMonthYearSum(last_event.TimeGenerated) != dayMonthYearSum(last_run):
     events_of_interest.append(last_event)
-        
+
 win32evtlog.CloseEventLog(event_log)
 print()
 # write all events of interest to the corresponding csv file
@@ -79,13 +79,13 @@ while event_index < len(events_of_interest):
         new_file = False
     else:
         new_file = True
-    
+
     with open(complete_path, "a+", newline="\n", encoding="utf-8") as fd:
         fieldnames = ["Ignore","TimeGenerated","EventID","EventCategory","RecordNumber", "StringInserts"]
         writer = csv.DictWriter(fd, fieldnames=fieldnames)
         if new_file:
             writer.writeheader()
-        
+
         for event_index in range(event_index, len(events_of_interest)):
             event = events_of_interest[event_index]
             print(last_written, event.TimeGenerated)
@@ -99,12 +99,12 @@ while event_index < len(events_of_interest):
                                  'EventCategory': event.EventCategory,
                                  'RecordNumber': event.RecordNumber,
                                  'StringInserts': event.StringInserts})
-            else:                
+            else:
                 break
 
         # check if the last event was written to file, or wheter a break
         # occured to switch files
         if event and last_written != event.TimeGenerated:
             last_written = event.TimeGenerated
-        else:            
+        else:
             break
