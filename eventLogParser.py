@@ -9,7 +9,7 @@ import os
 def dayMonthYearSum(date_object):
     return date_object.day + date_object.month + date_object.year
 
-log_file_path = r"C:\Users\SebastianSchultz\Documents\WorkLog"
+log_file_path = r"C:\Users\Sebastian Kieritz\Documents\WorkLog"
 log_file_name = r"EventList-{}-{:0>2}.csv"
 # default date for last run
 last_run = datetime(2017, 4, 1, 0, 0, 0)

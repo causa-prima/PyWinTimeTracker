@@ -3,7 +3,7 @@ import os
 from datetime import date, datetime, time, timedelta
 
 
-log_file_path = r"C:\Users\SebastianSchultz\Documents\WorkLog"
+log_file_path = r"C:\Users\Sebastian Kieritz\Documents\WorkLog"
 
 class LockPeriod(object):
     def __init__(self, begin = None):
@@ -108,7 +108,7 @@ for file_name in sorted(os.listdir(log_file_path)):
                     else:
                         print("LockPeriod ended on {} without beginning!".format(time_generated))
 
-            # append the last workday if it is a complete workday (handling the last line for completed months)
+            # append the last workday if it is a complete workday (handling the last line for completed months)            
             if current_workday.end.date() == date.today():
                 # If the last processed workday is today, it's end is not yet reached, but will be some time in
                 # the future. Hence, set it to the current time.
