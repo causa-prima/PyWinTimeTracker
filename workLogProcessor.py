@@ -4,6 +4,7 @@ from datetime import date, datetime, time, timedelta
 
 
 log_file_path = r"C:\Users\Sebastian Kieritz\Documents\WorkLog"
+DAILY_WORKING_HOURS = 8
 
 class LockPeriod(object):
     def __init__(self, begin = None):
@@ -74,7 +75,7 @@ class Workday(object):
 
     @property
     def overtime(self):
-        return self.corrected_working_hours - timedelta(hours=8)
+        return self.corrected_working_hours - timedelta(hours=DAILY_WORKING_HOURS)
 
 
 workdays = []
@@ -108,7 +109,7 @@ for file_name in sorted(os.listdir(log_file_path)):
                     else:
                         print("LockPeriod ended on {} without beginning!".format(time_generated))
 
-            # append the last workday if it is a complete workday (handling the last line for completed months)            
+            # append the last workday if it is a complete workday (handling the last line for completed months)
             if current_workday.end.date() == date.today():
                 # If the last processed workday is today, it's end is not yet reached, but will be some time in
                 # the future. Hence, set it to the current time.
@@ -122,4 +123,7 @@ for workday in workdays:
     overtime += workday.overtime
 
 print()
-print("aggregated overtime: {} ({:.2f} hours)".format(overtime, overtime.total_seconds()/3600))
+SECONDS_IN_HOUR = 3600
+overtime_in_hours = overtime.total_seconds()/SECONDS_IN_HOUR
+overtime_in_working_days = overtime.total_seconds()/SECONDS_IN_HOUR/DAILY_WORKING_HOURS
+print("aggregated overtime: {} ({:.2f} hours / {:.2f} working days)".format(overtime, overtime_in_hours, overtime_in_working_days))
