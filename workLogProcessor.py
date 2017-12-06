@@ -4,6 +4,7 @@ from datetime import date, datetime, time, timedelta
 
 
 log_file_path = r"C:\Users\Sebastian Kieritz\Documents\WorkLog"
+corrections_file_path = r"C:\Users\Sebastian Kieritz\Documents\WorkLog\Corrections.csv"
 DAILY_WORKING_HOURS = 8
 
 class LockPeriod(object):
@@ -30,7 +31,7 @@ class LockPeriod(object):
 
 
 class Workday(object):
-    def __init__(self, begin = None):
+    def __init__(self, begin=None):
         self.begin = begin
         self.end = None
         self.lock_periods = []
@@ -78,15 +79,25 @@ class Workday(object):
         return self.corrected_working_hours - timedelta(hours=DAILY_WORKING_HOURS)
 
 
+class Correction(object):
+    def __init__(self, date, amount, description):
+        self.date = date
+        self.amount = amount
+        self.description = description
+
+
 workdays = []
 current_workday = Workday()
 
+corrections = []
+
+# read all logged data
 for file_name in sorted(os.listdir(log_file_path)):
     if file_name.startswith("EventList-") and file_name.endswith(".csv"):
         print("processing", file_name)
         with open(os.path.join(log_file_path, file_name)) as csv_fd:
             reader = csv.DictReader(csv_fd)
-            #next(reader, None) # skip the header
+
             for row in reader:
                 if row['Ignore'] == 'Y':
                     continue
@@ -115,11 +126,38 @@ for file_name in sorted(os.listdir(log_file_path)):
                 # the future. Hence, set it to the current time.
                 current_workday.end = datetime.now()
 
+print("processing corrections")
+with open(corrections_file_path) as csv_fd:
+    reader = csv.DictReader(csv_fd)
+
+    for row in reader:
+        correctionDate = datetime.strptime(row['Date'], "%Y-%m-%d %H:%M:%S")
+        correctionAmount = timedelta(hours=float(row['Correction']))
+        corrections.append(Correction(correctionDate, correctionAmount, row['Description']))
+
 print()
 overtime = timedelta()
+correction_string = "Correction: {} {} {}"
+workday_string = "{} LL: {} ({}-{}) WH: {!s:>8} CWH: {!s:>8} OT: {:>8}"
+csv_string = "{}; {}; {}; {}; {}; {};"
+current_correction = None
+if corrections:
+    current_correction = corrections.pop()
+
 for workday in workdays:
-    out_string = "{} LL: {} ({}-{}) WH: {!s:>8} CWH: {!s:>8} OT: {:>8}"
-    print(out_string.format(workday, workday.lunch_period.duration, workday.lunch_period.begin.time(), workday.lunch_period.end.time(), workday.working_hours, workday.corrected_working_hours, str(workday.overtime) if workday.overtime > timedelta(0) else "-{}".format(-workday.overtime)))
+    if current_correction and current_correction.date < workday.begin:
+        print(correction_string.format(current_correction.date,
+                                       current_correction.description,
+                                       current_correction.amount))
+        overtime += current_correction.amount
+        if corrections:
+            current_correction = corrections.pop()
+        else:
+            current_correction = None
+
+    print(workday_string.format(workday, workday.lunch_period.duration, workday.lunch_period.begin.time(), workday.lunch_period.end.time(), workday.working_hours, workday.corrected_working_hours, str(workday.overtime) if workday.overtime > timedelta(0) else "-{}".format(-workday.overtime)))
+
+    #print(csv_string.format(workday.begin.date(), workday.begin.time(), workday.end.time(), workday.working_hours, workday.lunch_period.duration, workday.corrected_working_hours))
     overtime += workday.overtime
 
 print()
