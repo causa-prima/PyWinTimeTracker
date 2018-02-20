@@ -127,13 +127,15 @@ for file_name in sorted(os.listdir(log_file_path)):
                 current_workday.end = datetime.now()
 
 print("processing corrections")
-with open(corrections_file_path) as csv_fd:
+with open(corrections_file_path, encoding='utf-8') as csv_fd:
     reader = csv.DictReader(csv_fd)
 
     for row in reader:
         correctionDate = datetime.strptime(row['Date'], "%Y-%m-%d %H:%M:%S")
         correctionAmount = timedelta(hours=float(row['Correction']))
-        corrections.append(Correction(correctionDate, correctionAmount, row['Description']))
+        correctionDescription = row['Description']
+        correction = Correction(correctionDate, correctionAmount, correctionDescription)
+        corrections.append(correction)
 
 print()
 overtime = timedelta()
@@ -148,7 +150,7 @@ for workday in workdays:
     if current_correction and current_correction.date < workday.begin:
         print(correction_string.format(current_correction.date,
                                        current_correction.description,
-                                       current_correction.amount))
+                                       current_correction.amount.total_seconds() / 3600))
         overtime += current_correction.amount
         if corrections:
             current_correction = corrections.pop()
