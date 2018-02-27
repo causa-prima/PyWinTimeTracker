@@ -1,6 +1,7 @@
 import csv
 import os
 from datetime import date, datetime, time, timedelta
+from collections import deque
 
 
 log_file_path = r"C:\Users\Sebastian Kieritz\Documents\WorkLog"
@@ -89,7 +90,7 @@ class Correction(object):
 workdays = []
 current_workday = Workday()
 
-corrections = []
+corrections = deque()
 
 # read all logged data
 for file_name in sorted(os.listdir(log_file_path)):
@@ -144,7 +145,7 @@ workday_string = "{} LL: {} ({}-{}) WH: {!s:>8} CWH: {!s:>8} OT: {:>8}"
 csv_string = "{}; {}; {}; {}; {}; {};"
 current_correction = None
 if corrections:
-    current_correction = corrections.pop()
+    current_correction = corrections.popleft()
 
 for workday in workdays:
     if current_correction and current_correction.date < workday.begin:
@@ -153,7 +154,7 @@ for workday in workdays:
                                        current_correction.amount.total_seconds() / 3600))
         overtime += current_correction.amount
         if corrections:
-            current_correction = corrections.pop()
+            current_correction = corrections.popleft()
         else:
             current_correction = None
 
