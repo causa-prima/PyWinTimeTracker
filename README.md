@@ -8,7 +8,7 @@ Prerequisites:
 * enabled logging of lock- and unlock-events (optional)
     1. Open the group policy editor
     2. Navigate to "Windows Settings > Security Settings > Advanced Audit Policy Configuration > System Audit Policies - Local Group > Logon/Logoff"
-    3. Right click Audit Logoff and Audit Logon
+    3. Right click "Audit Other Logon/Logoff Events"
     4. Click "Properties"
     5. Enable "Configure the following audit events:"
     6. Enable "Success"
@@ -35,7 +35,7 @@ Automatically parsing the event log for the wanted events by executing eventLogP
 5. In the "Program/scipt:" field, insert the path to you python executable, e.g. "C:\Program Files (x86)\Python36-32\python.exe"
 6. In the "Add arguments (optional)" field, insert the path to eventLogParser.py, e.g. C:\PyWinTimeTracker\eventLogParser.py and click "Next" to advance to the "Finish" step.
 7. Check "Open the Properties dialog for this task when I click Finish" and click "Finish" to open the properties dialog.
-8. On the "General" page, check "Run with highest privileges". (TODO: Is this needed?).
+8. On the "General" page, check "Run with highest privileges".
 9. Optional: On the "Conditions" page, uncheck "Start the task only if the computer is on AC power".
 10. Optional: On the "Settings" page, check "Run task as soon as popssible after a scheduled start is missed" (TODO: Does it make sense to enable this option?)
 11. Click "OK" to close the dialog and save the task.
