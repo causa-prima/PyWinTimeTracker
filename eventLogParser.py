@@ -28,45 +28,64 @@ print('last run:', last_run)
 # iterate through the events, beginning with the most recent,
 # and save the events of interest (lock- and unlock-events, as
 # well as the first and last event of each day).
-event_log = win32evtlog.OpenEventLog(None, 'Security')
-events_of_interest = []
+event_logs_of_interest = ['Application', 'System', 'Security']
+all_events = []
 
-last_event = None
-continue_while = True
-
-while continue_while:
-    events = win32evtlog.ReadEventLog(event_log, win32evtlog.EVENTLOG_BACKWARDS_READ|win32evtlog.EVENTLOG_SEQUENTIAL_READ, 0)
-    if not events:
-        break
-
-    for event in events:
-        event_timetuple = event.TimeGenerated.timetuple()
-        event_timestamp = mktime(event_timetuple)
-        event_datetime = datetime.fromtimestamp(event_timestamp)
-
-        if event_datetime <= last_run:
-            continue_while = False
+for event_log_name in event_logs_of_interest:
+    print('Processing {} event log'.format(event_log_name))
+    last_event = None
+    continue_while = True
+    
+    event_log = win32evtlog.OpenEventLog(None, event_log_name)
+    while continue_while:
+        events = win32evtlog.ReadEventLog(event_log, win32evtlog.EVENTLOG_BACKWARDS_READ|win32evtlog.EVENTLOG_SEQUENTIAL_READ, 0)
+        if not events:
             break
 
-        if last_event and dayMonthYearSum(event.TimeGenerated) != dayMonthYearSum(last_event.TimeGenerated):
-            # the day changed, append the current and perhaps the old event
-            if not last_event_was_appended:
-                events_of_interest.append(last_event)
-            events_of_interest.append(event)
-            last_event_was_appended = True
-        elif event.EventID in (4800, 4801): # append events of interest: 4800 = lock, 4801 = unlock
-            events_of_interest.append(event)
-            last_event_was_appended = True
-        else:
-            last_event_was_appended = False
-        last_event = event
+        for event in events:
+            event_timetuple = event.TimeGenerated.timetuple()
+            event_timestamp = mktime(event_timetuple)
+            event_datetime = datetime.fromtimestamp(event_timestamp)
+
+            if event_datetime <= last_run:
+                continue_while = False
+                break
+            else:
+                all_events.append(event)
+
+    win32evtlog.CloseEventLog(event_log)
+    event_log = None
+
+all_events = sorted(all_events, key=lambda e: e.TimeGenerated.timetuple(), reverse=True)
+events_of_interest = []
+last_event = None
+for event in all_events:
+    event_timetuple = event.TimeGenerated.timetuple()
+    event_timestamp = mktime(event_timetuple)
+    event_datetime = datetime.fromtimestamp(event_timestamp)
+
+    if event_datetime <= last_run:
+        continue_while = False
+        break
+
+    if last_event and dayMonthYearSum(event.TimeGenerated) != dayMonthYearSum(last_event.TimeGenerated):
+        # the day changed, append the current and perhaps the old event
+        if not last_event_was_appended:
+            events_of_interest.append(last_event)
+        events_of_interest.append(event)
+        last_event_was_appended = True
+    elif event.EventID in (4800, 4801): # append events of interest: 4800 = lock, 4801 = unlock
+        events_of_interest.append(event)
+        last_event_was_appended = True
+    else:
+        last_event_was_appended = False
+    last_event = event
 
 # save last event if it was not yet appended and the day differs from
 # the day of the last run (hence the last run must have been the last event of that day)
 if last_event and not last_event_was_appended and dayMonthYearSum(last_event.TimeGenerated) != dayMonthYearSum(last_run):
     events_of_interest.append(last_event)
 
-win32evtlog.CloseEventLog(event_log)
 print()
 # write all events of interest to the corresponding csv file
 last_written = last_run
