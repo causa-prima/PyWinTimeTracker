@@ -6,13 +6,17 @@ import csv
 import os
 
 
-def dayMonthYearSum(date_object):
-    return date_object.day + date_object.month + date_object.year
+def isSameDay(date1, date2):
+    return date1.day == date2.day and date1.month == date2.month and date1.year == date2.year
 
 log_file_path = r"C:\Users\Sebastian Kieritz\Documents\WorkLog"
 log_file_name = r"EventList-{}-{:0>2}.csv"
 # default date for last run
-last_run = datetime(2017, 4, 1, 0, 0, 0)
+last_run = None
+
+DO_NOT_IGNORE = 'N'
+EVENT_LOCK = 4800
+EVENT_UNLOCK = 4801
 
 # get the date and time of the last run
 for file_name in sorted(os.listdir(log_file_path), reverse=True):
@@ -23,7 +27,8 @@ for file_name in sorted(os.listdir(log_file_path), reverse=True):
                 last_run = datetime.strptime(csv_deque[0]["TimeGenerated"], "%Y-%m-%d %H:%M:%S")
                 break
 
-print('last run:', last_run)
+print('last run:', last_run or 'Never')
+last_run = last_run or datetime(2017, 1, 1, 0, 0, 0)
 
 # iterate through the events, beginning with the most recent,
 # and save the events of interest (lock- and unlock-events, as
@@ -68,13 +73,13 @@ for event in all_events:
         continue_while = False
         break
 
-    if last_event and dayMonthYearSum(event.TimeGenerated) != dayMonthYearSum(last_event.TimeGenerated):
+    if last_event and not isSameDay(event.TimeGenerated, last_event.TimeGenerated):
         # the day changed, append the current and perhaps the old event
         if not last_event_was_appended:
             events_of_interest.append(last_event)
         events_of_interest.append(event)
         last_event_was_appended = True
-    elif event.EventID in (4800, 4801): # append events of interest: 4800 = lock, 4801 = unlock
+    elif event.EventID in (EVENT_LOCK, EVENT_UNLOCK):
         events_of_interest.append(event)
         last_event_was_appended = True
     else:
@@ -83,47 +88,39 @@ for event in all_events:
 
 # save last event if it was not yet appended and the day differs from
 # the day of the last run (hence the last run must have been the last event of that day)
-if last_event and not last_event_was_appended and dayMonthYearSum(last_event.TimeGenerated) != dayMonthYearSum(last_run):
+if last_event and not last_event_was_appended and not isSameDay(last_event.TimeGenerated, last_run):
     events_of_interest.append(last_event)
 
-print()
 # write all events of interest to the corresponding csv file
-last_written = last_run
+print('Adding {} new events to the event logs'.format(len(events_of_interest)))
 event_index = 0
 events_of_interest.reverse()
 while event_index < len(events_of_interest):
-    current_log_file_name = log_file_name.format(last_written.year, last_written.month)
-    complete_path = os.path.join(log_file_path, current_log_file_name)
-    if os.path.exists(complete_path):
-        new_file = False
-    else:
-        new_file = True
+    current_write_year = events_of_interest[event_index].TimeGenerated.year
+    current_write_month = events_of_interest[event_index].TimeGenerated.month
+    current_log_file_name = log_file_name.format(current_write_year, current_write_month)    
+    complete_log_file_path = os.path.join(log_file_path, current_log_file_name)    
+    is_new_file = not os.path.exists(complete_log_file_path)
 
-    with open(complete_path, "a+", newline="\n", encoding="utf-8") as fd:
-        fieldnames = ["Ignore","TimeGenerated","EventID","EventCategory","RecordNumber", "StringInserts"]
+    with open(complete_log_file_path, "a+", newline="\n", encoding="utf-8") as fd:
+        fieldnames = ["Ignore","TimeGenerated","EventID"]
         writer = csv.DictWriter(fd, fieldnames=fieldnames)
-        if new_file:
+        if is_new_file:
             writer.writeheader()
 
         for event_index in range(event_index, len(events_of_interest)):
             event = events_of_interest[event_index]
-            print(last_written, event.TimeGenerated)
             # check if the event is within the same month as the last written one,
-            # otherwise change the file
-            if event.TimeGenerated.month == last_written.month:
-                last_written = event.TimeGenerated
-                writer.writerow({'Ignore': 'N',
+            # otherwise break and change the file
+            if event.TimeGenerated.month == current_write_month:
+                print(event.TimeGenerated, event.EventID)
+                writer.writerow({'Ignore': DO_NOT_IGNORE,
                                  'TimeGenerated': event.TimeGenerated,
-                                 'EventID': event.EventID,
-                                 'EventCategory': event.EventCategory,
-                                 'RecordNumber': event.RecordNumber,
-                                 'StringInserts': event.StringInserts})
+                                 'EventID': event.EventID})
             else:
                 break
 
-        # check if the last event was written to file, or wheter a break
-        # occured to switch files
-        if event and last_written != event.TimeGenerated:
-            last_written = event.TimeGenerated
-        else:
+        # check if the last event was written to file, or whether a break
+        # occurred to switch files
+        if not event or event.TimeGenerated.month == current_write_month:
             break
